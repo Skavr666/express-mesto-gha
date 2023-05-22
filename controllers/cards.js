@@ -15,14 +15,13 @@ module.exports.createCard = (req, res) => {
   const owner = req.user._id;
   cardSchema
     .create({ name, link, owner })
-    .then((card) => res.status(201).send(card))
+    .then((card) => res.send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: 'Error appears when create card' });
-        return;
+      } else {
+        res.status(defaultErrorCode).send({ message: defaultErrorMessage });
       }
-
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
     });
 };
 
