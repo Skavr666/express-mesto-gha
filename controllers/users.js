@@ -1,7 +1,11 @@
 const userSchema = require('../models/user');
 
-const defaultErrorMessage = 'Server error';
-const defaultErrorCode = 500;
+const {
+  invalidDataErrorCode,
+  dataNotFoundErrorCode,
+  defaultErrorCode,
+  defaultErrorMessage,
+} = require('../utils/constants');
 
 module.exports.getUsers = (req, res) => {
   userSchema
@@ -18,11 +22,11 @@ module.exports.getUserById = (req, res) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Error appears when get user' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when get user' });
         return;
       }
       if (err.name === 'DocumentNotFoundError') {
-        res.status(404).send({ message: 'Could not find user by ID' });
+        res.status(dataNotFoundErrorCode).send({ message: 'Could not find user by ID' });
         return;
       }
 
@@ -37,7 +41,7 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Error appears when create user' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when create user' });
         return;
       }
 
@@ -52,7 +56,7 @@ module.exports.updateUser = (req, res) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Error appears when update user info' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when update user info' });
         return;
       }
 
@@ -67,7 +71,7 @@ module.exports.updateAvatar = (req, res) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Error appears when update avatar' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when update avatar' });
         return;
       }
 

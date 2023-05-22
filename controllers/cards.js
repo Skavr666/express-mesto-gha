@@ -1,7 +1,11 @@
 const cardSchema = require('../models/card');
 
-const defaultErrorMessage = 'Server error';
-const defaultErrorCode = 500;
+const {
+  invalidDataErrorCode,
+  dataNotFoundErrorCode,
+  defaultErrorCode,
+  defaultErrorMessage,
+} = require('../utils/constants');
 
 module.exports.getCards = (req, res) => {
   cardSchema
@@ -18,7 +22,7 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Error appears when create card' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when create card' });
       } else {
         res.status(defaultErrorCode).send({ message: defaultErrorMessage });
       }
@@ -33,11 +37,11 @@ module.exports.deleteCard = (req, res) => {
     .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Error appears when get card' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when get card' });
         return;
       }
       if (err.name === 'DocumentNotFoundError') {
-        res.status(404).send({ message: 'Could not find card by ID' });
+        res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
         return;
       }
 
@@ -54,14 +58,14 @@ module.exports.addCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({ message: 'Could not find card by ID' });
+        return res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
       }
 
       return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Error appears when add card like' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when add card like' });
         return;
       }
 
@@ -78,14 +82,14 @@ module.exports.removeCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({ message: 'Could not find card by ID' });
+        return res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
       }
 
       return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Error appears when remove card like' });
+        res.status(invalidDataErrorCode).send({ message: 'Error appears when remove card like' });
         return;
       }
 
