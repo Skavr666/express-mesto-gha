@@ -15,7 +15,7 @@ module.exports.createCard = (req, res) => {
   const owner = req.user._id;
   cardSchema
     .create({ name, link, owner })
-    .then((card) => res.send(card))
+    .then((card) => res.status(201).send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({ message: 'Error appears when create card' });
@@ -31,7 +31,7 @@ module.exports.deleteCard = (req, res) => {
   cardSchema
     .findByIdAndRemove(cardId)
     .orFail()
-    .then((card) => res.send(card))
+    .then((card) => res.status(200).send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(400).send({ message: 'Error appears when get card' });
@@ -55,12 +55,10 @@ module.exports.addCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Could not find card by ID' });
-
-        return;
+        return res.status(404).send({ message: 'Could not find card by ID' });
       }
 
-      res.send(card);
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -81,12 +79,10 @@ module.exports.removeCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Could not find card by ID' });
-
-        return;
+        return res.status(404).send({ message: 'Could not find card by ID' });
       }
 
-      res.send(card);
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
