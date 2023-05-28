@@ -27,7 +27,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).send({
     message: statusCode === 500 ? 'Server error' : message,
   });
-  next();
+  return next();
 });
 
 mongoose.connect('mongodb://0.0.0.0:27017/mestodb', {});

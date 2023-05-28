@@ -31,25 +31,17 @@ module.exports.deleteCard = (req, res, next) => {
   cardSchema
     .findById(cardId)
     .then((card) => {
-      if (card.owner.toString() !== req.user._id) {
-        throw new NoRightsError('Forbidden');
+      if (!card) {
+        throw new DataNotFoundError('Nothing to delete');
+      }
+      if (!card.owner.equals(req.user._id)) {
+        return next(new NoRightsError('Forbidden'));
       }
 
-      return cardSchema.findByIdAndRemove(cardId);
+      return card.deleteOne();
     })
     .then(() => res.status(200).send({ message: 'Deleted' }))
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new InvalidDataError('Error appears when get card'));
-        return;
-      }
-      if (err.name === 'DocumentNotFoundError') {
-        next(new DataNotFoundError('Could not find card by ID'));
-        return;
-      }
-
-      next(err);
-    });
+    .catch(next);
 };
 
 module.exports.addCardLike = (req, res, next) => {
