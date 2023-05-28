@@ -1,11 +1,7 @@
-const invalidDataErrorCode = 400;
-const dataNotFoundErrorCode = 404;
-const defaultErrorCode = 500;
-const defaultErrorMessage = 'Server error';
+const saltRounds = 10;
+const urlRegex = /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)$/;
 
 module.exports = {
-  invalidDataErrorCode,
-  dataNotFoundErrorCode,
-  defaultErrorCode,
-  defaultErrorMessage,
+  saltRounds,
+  urlRegex,
 };

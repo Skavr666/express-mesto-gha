@@ -1,20 +1,24 @@
+const { NODE_ENV, JWT_SECRET } = process.env;
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
 const userSchema = require('../models/user');
 
-const {
-  invalidDataErrorCode,
-  dataNotFoundErrorCode,
-  defaultErrorCode,
-  defaultErrorMessage,
-} = require('../utils/constants');
+const InvalidDataError = require('../errors/InvalidDataError');
+const DataNotFoundError = require('../errors/DataNotFoundError');
+const ConflictError = require('../errors/ConflictError');
+const UserAuthError = require('../errors/UserAuthError');
 
-module.exports.getUsers = (req, res) => {
+const { saltRounds } = require('../utils/constants');
+
+module.exports.getUsers = (req, res, next) => {
   userSchema
     .find({})
     .then((users) => res.send(users))
-    .catch(() => res.status(defaultErrorCode).send({ message: defaultErrorMessage }));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
   userSchema
     .findById(userId)
@@ -22,59 +26,110 @@ module.exports.getUserById = (req, res) => {
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when get user' });
+        next(new InvalidDataError('Error appears when get user'));
         return;
       }
       if (err.name === 'DocumentNotFoundError') {
-        res.status(dataNotFoundErrorCode).send({ message: 'Could not find user by ID' });
+        next(new DataNotFoundError('Could not find user by ID'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
     });
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  userSchema
-    .create({ name, about, avatar })
-    .then((user) => res.send(user))
+module.exports.createUser = (req, res, next) => {
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, saltRounds)
+    .then((hash) => userSchema.create({
+      name, about, avatar, email, password: hash,
+    }))
+    .then(() => res.status(201).send({
+      data: {
+        name, about, avatar, email,
+      },
+    }))
     .catch((err) => {
+      if (err.code === 11000) {
+        return next(new ConflictError('User is already exist'));
+      }
       if (err.name === 'ValidationError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when create user' });
-        return;
+        return next(new InvalidDataError('Error appears when create user'));
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      return next(err);
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   userSchema
     .findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when update user info' });
+        next(new InvalidDataError('Error appears when update user info'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   userSchema
     .findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => res.send(user))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when update avatar' });
+        next(new InvalidDataError('Error appears when update avatar'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
+    });
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  userSchema
+    .findOne({ email })
+    .select('+password')
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new UserAuthError('Invalid email or password'));
+      }
+      return bcrypt.compare(password, user.password)
+        .then((isValidPassword) => {
+          if (!isValidPassword) {
+            return Promise.reject(new UserAuthError('Invalid email or password'));
+          }
+          const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret', { expiresIn: '7d' });
+          res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true });
+          return res.status(200).send({ token });
+        });
+    })
+    .catch(next);
+};
+
+module.exports.getUserInfo = (req, res, next) => {
+  userSchema
+    .findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new DataNotFoundError('Could not find user by ID');
+      }
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new InvalidDataError('Error appears when get user'));
+        return;
+      }
+      next(err);
     });
 };

@@ -1,20 +1,17 @@
 const cardSchema = require('../models/card');
 
-const {
-  invalidDataErrorCode,
-  dataNotFoundErrorCode,
-  defaultErrorCode,
-  defaultErrorMessage,
-} = require('../utils/constants');
+const InvalidDataError = require('../errors/InvalidDataError');
+const NoRightsError = require('../errors/NoRightsError');
+const DataNotFoundError = require('../errors/DataNotFoundError');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   cardSchema
     .find({})
     .then((cards) => res.send(cards))
-    .catch(() => res.status(defaultErrorCode).send({ message: defaultErrorMessage }));
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   cardSchema
@@ -22,34 +19,40 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when create card' });
+        next(new InvalidDataError('Error appears when create card'));
       } else {
-        res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+        next(err);
       }
     });
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   cardSchema
-    .findByIdAndRemove(cardId)
-    .orFail()
-    .then((card) => res.status(200).send(card))
+    .findById(cardId)
+    .then((card) => {
+      if (card.owner.toString() !== req.user._id) {
+        throw new NoRightsError('Forbidden');
+      }
+
+      return cardSchema.findByIdAndRemove(cardId);
+    })
+    .then(() => res.status(200).send({ message: 'Deleted' }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when get card' });
+        next(new InvalidDataError('Error appears when get card'));
         return;
       }
       if (err.name === 'DocumentNotFoundError') {
-        res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
+        next(new DataNotFoundError('Could not find card by ID'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
     });
 };
 
-module.exports.addCardLike = (req, res) => {
+module.exports.addCardLike = (req, res, next) => {
   cardSchema
     .findByIdAndUpdate(
       req.params.cardId,
@@ -58,22 +61,22 @@ module.exports.addCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
+        throw new DataNotFoundError('Could not find card by ID');
       }
 
       return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when add card like' });
+        next(new InvalidDataError('Error appears when add card like'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
     });
 };
 
-module.exports.removeCardLike = (req, res) => {
+module.exports.removeCardLike = (req, res, next) => {
   cardSchema
     .findByIdAndUpdate(
       req.params.cardId,
@@ -82,17 +85,17 @@ module.exports.removeCardLike = (req, res) => {
     )
     .then((card) => {
       if (!card) {
-        return res.status(dataNotFoundErrorCode).send({ message: 'Could not find card by ID' });
+        throw new DataNotFoundError('Could not find card by ID');
       }
 
       return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(invalidDataErrorCode).send({ message: 'Error appears when remove card like' });
+        next(new InvalidDataError('Error appears when remove card like'));
         return;
       }
 
-      res.status(defaultErrorCode).send({ message: defaultErrorMessage });
+      next(err);
     });
 };
