@@ -100,12 +100,12 @@ module.exports.login = (req, res, next) => {
     .select('+password')
     .then((user) => {
       if (!user) {
-        return Promise.reject(new UserAuthError('Invalid email or password'));
+        return next(new UserAuthError('Invalid email or password'));
       }
       return bcrypt.compare(password, user.password)
         .then((isValidPassword) => {
           if (!isValidPassword) {
-            return Promise.reject(new UserAuthError('Invalid email or password'));
+            return next(new UserAuthError('Invalid email or password'));
           }
           const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
           // res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true });
