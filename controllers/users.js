@@ -22,19 +22,18 @@ module.exports.getUserById = (req, res, next) => {
   const { userId } = req.params;
   userSchema
     .findById(userId)
-    .orFail()
-    .then((user) => res.send(user))
+    .then((user) => {
+      if (!user) {
+        throw new DataNotFoundError('Could not find user by ID');
+      }
+      res.send({ data: user });
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new InvalidDataError('Error appears when get user'));
-        return;
-      }
-      if (err.name === 'DocumentNotFoundError') {
-        next(new DataNotFoundError('Could not find user by ID'));
-        return;
+        return next(new InvalidDataError('Error appears when get user'));
       }
 
-      next(err);
+      return next(err);
     });
 };
 
@@ -127,9 +126,8 @@ module.exports.getUserInfo = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new InvalidDataError('Error appears when get user'));
-        return;
+        return next(new InvalidDataError('Error appears when get user'));
       }
-      next(err);
+      return next(err);
     });
 };
