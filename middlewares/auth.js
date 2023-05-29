@@ -8,9 +8,9 @@ module.exports = (req, res, next) => {
     throw new UserAuthError('Unauthorized');
   }
 
-  const token = authorization.replace('Bearer ', '');
-
   let payload;
+
+  const token = authorization.replace('Bearer ', '');
 
   try {
     payload = jwt.verify(token, 'some-secret-key');

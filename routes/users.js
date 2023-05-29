@@ -10,8 +10,8 @@ const {
 } = require('../controllers/users');
 
 userRouter.get('/', getUsers);
-userRouter.get('/:userId', validateUserId, getUserById);
 userRouter.patch('/me', validateUserUpdate, updateUser);
+userRouter.get('/:userId', validateUserId, getUserById);
 userRouter.patch('/me/avatar', validateAvatarUpdate, updateAvatar);
 userRouter.get('/me', getUserInfo);
 
