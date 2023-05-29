@@ -38,9 +38,8 @@ module.exports.deleteCard = (req, res, next) => {
         return next(new NoRightsError('Forbidden'));
       }
 
-      return card.deleteOne();
+      return card.deleteOne().then(() => res.status(200).send({ message: 'Deleted' }));
     })
-    .then(() => res.status(200).send({ message: 'Deleted' }))
     .catch(next);
 };
 
