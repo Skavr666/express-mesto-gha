@@ -108,7 +108,7 @@ module.exports.login = (req, res, next) => {
             return next(new UserAuthError('Invalid email or password'));
           }
           const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-          res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true });
+          // res.cookie('jwt', token, { maxAge: 3600000 * 24 * 7, httpOnly: true, sameSite: true });
           return res.status(200).send({ token });
         });
     })
