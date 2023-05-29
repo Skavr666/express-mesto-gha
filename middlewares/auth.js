@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
 
   let payload;
 
-  const token = authorization.replace('Bearer ', '');
+  const token = req.cookies.jwt;
 
   try {
     payload = jwt.verify(token, 'some-secret-key');
